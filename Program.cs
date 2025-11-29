@@ -1,6 +1,7 @@
 ﻿using AtividadeLabIV.Aspects.Audit;
 using AtividadeLabIV.Aspects.Auth;
 using AtividadeLabIV.Aspects.Exceptions;
+using AtividadeLabIV.Aspects.Notify;
 
 namespace AtividadeLabIV;
 
@@ -59,10 +60,26 @@ public class LojaVirtual : IComponenteAutenticado
     [LogAuditoria]
     public List<Pedido> ListarPedidos() => Pedidos;
 
-    [LogAuditoria]
+    [Autenticado, LogAuditoria, Notificacao]
     public void CadastrarPedido(Pedido pedido) => Pedidos.Add(pedido);
 
-    [LogAuditoria, HandleException, ComponenteAutenticado]
+    [Autenticado, LogAuditoria, HandleException]
+    public void RemoverPedido(Guid Id)
+    {
+        var idx = Pedidos.FindIndex(x => x.Id == Id);
+
+        if (idx > 0)
+        {
+            Pedidos.RemoveAt(idx);
+            return;
+        }
+        else
+        {
+            throw new ArgumentOutOfRangeException(nameof(Id));
+        }
+    }
+
+    [Autenticado, LogAuditoria, HandleException, Notificacao]
     public void AlterarPedido(Guid id, Pedido pedido)
     {
         var pedidoParaAtualizar = Pedidos.FirstOrDefault(x => x.Id == id) 
@@ -84,6 +101,16 @@ public class LojaVirtual : IComponenteAutenticado
 
 internal class Program
 {
+    private static void LogPedidos(List<Pedido> pedidos)
+    {
+        Console.WriteLine("[MAIN] LogPedidos");
+
+        foreach (var pedido in pedidos)
+        {
+            Console.WriteLine(pedido.ToString());
+        }
+    }
+
     private static void Main(string[] args)
     {
         var loja = new LojaVirtual();
@@ -96,24 +123,31 @@ internal class Program
             0.90
         );
 
+        // testando seu autenticar
         loja.CadastrarPedido(pedidoTeste);
 
-        var pedidos = loja.ListarPedidos();
+        loja.Autenticar();
 
-        foreach (var pedido in pedidos)
-        {
-            Console.WriteLine(pedido.ToString());
-        }
+        // testando autenticado 
+        loja.CadastrarPedido(pedidoTeste);
+
+        LogPedidos(loja.ListarPedidos());
 
         // testando auth 
         loja.AlterarPedido(Guid.NewGuid(), pedidoTeste);
-
-        loja.Autenticar();
 
         // testando exception handler 
         loja.AlterarPedido(Guid.NewGuid(), pedidoTeste);
 
         // caminho feliz
         loja.AlterarPedido(pedidoTeste.Id, pedidoTeste);
+
+        // testando remover com pedido que nao existe 
+        loja.RemoverPedido(Guid.NewGuid());
+
+        // testando remover com pedido que existe
+        loja.RemoverPedido(pedidoTeste.Id);
+
+        LogPedidos(loja.ListarPedidos());
     }
 }

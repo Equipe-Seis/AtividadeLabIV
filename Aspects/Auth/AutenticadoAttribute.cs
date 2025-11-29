@@ -2,7 +2,7 @@ using Metalama.Framework.Aspects;
 
 namespace AtividadeLabIV.Aspects.Auth;
 
-public class ComponenteAutenticadoAttribute : OverrideMethodAspect
+public class AutenticadoAttribute : OverrideMethodAspect
 {
     public override dynamic? OverrideMethod()
     {

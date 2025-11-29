@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <Folder Include="Aspects/Exceptions/" />
+    <Folder Include="Aspects/Notify/" />
   </ItemGroup>
 
 </Project>
