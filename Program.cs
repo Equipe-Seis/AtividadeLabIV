@@ -1,4 +1,6 @@
-﻿namespace AtividadeLabIV;
+﻿using AtividadeLabIV.Aspects.Audit;
+
+namespace AtividadeLabIV;
 
 public class Pedido
 {
@@ -30,19 +32,27 @@ public class Pedido
         Produtos = produtos;
         ValorTotal = valorTotal;
     }
+
+    public override string ToString()
+    {
+        return $"Pedido(Id={Id}, Cliente={Cliente}, Itens={Produtos?.Count ?? 0}, Valor={ValorTotal})";
+    }
 }
 
 public class LojaVirtual
 {
-    private readonly List<Pedido> Pedidos = []; 
-    
+    private readonly List<Pedido> Pedidos = [];
+
+    [AuditLog]
     public void CadastrarPedido(Pedido pedido)
     {
         Pedidos.Add(pedido);
     }
 
+    [AuditLog]
     public List<Pedido> ListarPedidos() => Pedidos;
 
+    [AuditLog]
     public void AlterarPedido(Guid id, Pedido pedido)
     {
         var pedidoParaAtualizar = Pedidos.FirstOrDefault(x => x.Id == id) 
@@ -61,6 +71,19 @@ internal class Program
     {
         var loja = new LojaVirtual();
 
-        Console.WriteLine("Bomdia");
+        loja.CadastrarPedido(Pedido.CreateInstance(
+            "190",
+            [
+                "sabonete",
+            ],
+            0.90
+        ));
+
+        var pedidos = loja.ListarPedidos();
+
+        foreach (var pedido in pedidos)
+        {
+            Console.WriteLine(pedido.ToString());
+        }
     }
 }
