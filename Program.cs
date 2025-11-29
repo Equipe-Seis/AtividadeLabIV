@@ -68,7 +68,7 @@ public class LojaVirtual : IComponenteAutenticado
     {
         var idx = Pedidos.FindIndex(x => x.Id == Id);
 
-        if (idx > 0)
+        if (idx >= 0)
         {
             Pedidos.RemoveAt(idx);
             return;
