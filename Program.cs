@@ -1,6 +1,15 @@
 ﻿using AtividadeLabIV.Aspects.Audit;
+using AtividadeLabIV.Aspects.Auth;
+using AtividadeLabIV.Aspects.Exceptions;
 
 namespace AtividadeLabIV;
+
+public interface IComponenteAutenticado
+{
+    public Guid? IdSessao { get; set; }
+
+    Guid Autenticar();
+}
 
 public class Pedido
 {
@@ -12,6 +21,7 @@ public class Pedido
     private Pedido()
     {}
 
+    [LogAuditoria]
     public static Pedido CreateInstance(
         string cliente,
         List<string> produtos,
@@ -39,20 +49,20 @@ public class Pedido
     }
 }
 
-public class LojaVirtual
+public class LojaVirtual : IComponenteAutenticado
 {
+    private Guid? _idSessao = null;
     private readonly List<Pedido> Pedidos = [];
 
-    [AuditLog]
-    public void CadastrarPedido(Pedido pedido)
-    {
-        Pedidos.Add(pedido);
-    }
+    public Guid? IdSessao { get => _idSessao; set => _idSessao = value; }
 
-    [AuditLog]
+    [LogAuditoria]
     public List<Pedido> ListarPedidos() => Pedidos;
 
-    [AuditLog]
+    [LogAuditoria]
+    public void CadastrarPedido(Pedido pedido) => Pedidos.Add(pedido);
+
+    [LogAuditoria, HandleException, ComponenteAutenticado]
     public void AlterarPedido(Guid id, Pedido pedido)
     {
         var pedidoParaAtualizar = Pedidos.FirstOrDefault(x => x.Id == id) 
@@ -63,6 +73,13 @@ public class LojaVirtual
             pedido.Produtos,
             pedido.ValorTotal);
     }
+
+    public Guid Autenticar()
+    {
+        var id = Guid.NewGuid();
+        IdSessao = id;
+        return id;
+    }
 }
 
 internal class Program
@@ -71,13 +88,15 @@ internal class Program
     {
         var loja = new LojaVirtual();
 
-        loja.CadastrarPedido(Pedido.CreateInstance(
+        var pedidoTeste = Pedido.CreateInstance(
             "190",
             [
                 "sabonete",
             ],
             0.90
-        ));
+        );
+
+        loja.CadastrarPedido(pedidoTeste);
 
         var pedidos = loja.ListarPedidos();
 
@@ -85,5 +104,16 @@ internal class Program
         {
             Console.WriteLine(pedido.ToString());
         }
+
+        // testando auth 
+        loja.AlterarPedido(Guid.NewGuid(), pedidoTeste);
+
+        loja.Autenticar();
+
+        // testando exception handler 
+        loja.AlterarPedido(Guid.NewGuid(), pedidoTeste);
+
+        // caminho feliz
+        loja.AlterarPedido(pedidoTeste.Id, pedidoTeste);
     }
 }

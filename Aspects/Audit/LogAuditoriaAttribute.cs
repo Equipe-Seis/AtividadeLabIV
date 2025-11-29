@@ -2,7 +2,7 @@ using Metalama.Framework.Aspects;
 
 namespace AtividadeLabIV.Aspects.Audit;
 
-public class AuditLogAttribute : OverrideMethodAspect
+public class LogAuditoriaAttribute : OverrideMethodAspect
 {
     public override dynamic? OverrideMethod()
     {
